@@ -19,6 +19,10 @@ from data_loader import DataLoader
 class Caption_Generator():
     def __init__(self):
         self.dataloader = DataLoader()
+        self.dataloader.dataprepare()
+        self.cap_vector, self.max_length = self.dataloader.tokenize()
+        self.tokenizer = self.dataloader.tokenizer
+
 
     def loss_function(self, real, pred):
         mask = tf.math.logical_not(tf.math.equal(real, 0))
@@ -35,7 +39,7 @@ class Caption_Generator():
         # 画像のキャプションはその前後の画像と無関係なため
         hidden = self.decoder.reset_state(batch_size=target.shape[0])
 
-        dec_input = tf.expand_dims([tokenizer.word_index['<start>']] * target.shape[0], 1)
+        dec_input = tf.expand_dims([self.tokenizer.word_index['<start>']] * target.shape[0], 1)
 
         with tf.GradientTape() as tape:
             features = self.encoder(img_tensor)
@@ -56,21 +60,21 @@ class Caption_Generator():
     def evaluate(image):
 
         hidden = self.decoder.reset_state(batch_size=1)
-        temp_input = tf.expand_dims(load_image(image)[0], 0)
+        temp_input = tf.expand_dims(self.dataloader.load_image(image)[0], 0)
         img_tensor_val = self.dataloader.image_features_extract_model(temp_input)
         img_tensor_val = tf.reshape(img_tensor_val, (img_tensor_val.shape[0], -1, img_tensor_val.shape[3]))
 
         features = self.encoder(img_tensor_val)
 
-        dec_input = tf.expand_dims([tokenizer.word_index['<start>']], 0)
+        dec_input = tf.expand_dims([self.tokenizer.word_index['<start>']], 0)
         result = []
 
-        for i in range(max_length):
+        for i in range(self.max_length):
             predictions, hidden, attention_weights = self.decoder(dec_input, features, hidden)
             predicted_id = tf.random.categorical(predictions, 1)[0][0].numpy()
-            result.append(tokenizer.index_word[predicted_id])
+            result.append(self.tokenizer.index_word[predicted_id])
 
-            if tokenizer.index_word[predicted_id] == '<end>':
+            if self.tokenizer.index_word[predicted_id] == '<end>':
                 return result
 
             dec_input = tf.expand_dims([predicted_id], 0)
@@ -78,8 +82,8 @@ class Caption_Generator():
 
     def model(self):
         # これらのパラメータはシステム構成に合わせて自由に変更してください
-        img_name_train, img_name_val, cap_train, cap_val = train_test_split(img_name_vector,
-                                                                                cap_vector,
+        img_name_train, self.img_name_val, cap_train, self.cap_val = train_test_split(self.img_name_vector,
+                                                                                self.cap_vector,
                                                                                 test_size=0.2,
                                                                                 random_state=0)
 
@@ -87,23 +91,23 @@ class Caption_Generator():
         BUFFER_SIZE = 1000
         embedding_dim = 256
         units = 512
-        vocab_size = len(tokenizer.word_index) + 1
+        vocab_size = len(self.tokenizer.word_index) + 1
         num_steps = len(img_name_train) // BATCH_SIZE
         # InceptionV3 から抽出したベクトルの shape は (64, 2048)
         # つぎの 2 つのパラメータはこのベクトルの shape を表す
         features_shape = 2048
         attention_features_shape = 64
 
-        self.dataset = tf.data.Dataset.from_tensor_slices((img_name_train, cap_train))
+        dataset = tf.data.Dataset.from_tensor_slices((img_name_train, cap_train))
 
         # numpy ファイルを並列に読み込むために map を使用
-        self.dataset = self.dataset.map(lambda item1, item2: tf.numpy_function(
+        dataset = dataset.map(lambda item1, item2: tf.numpy_function(
                 self.dataloader.map_func, [item1, item2], [tf.float32, tf.int32]),
                 num_parallel_calls=tf.data.experimental.AUTOTUNE)
 
         # シャッフルとバッチ化
-        self.dataset = self.dataset.shuffle(BUFFER_SIZE).batch(BATCH_SIZE)
-        self.dataset = self.dataset.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
+        dataset = dataset.shuffle(BUFFER_SIZE).batch(BATCH_SIZE)
+        dataset = dataset.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
 
         self.encoder = CNN_Encoder(embedding_dim)
         self.decoder = RNN_Decoder(embedding_dim, units, vocab_size)
@@ -116,7 +120,8 @@ class Caption_Generator():
         ckpt = tf.train.Checkpoint(encoder=self.encoder,
                                 decoder=self.decoder,
                                 optimizer = self.optimizer)
-        self.ckpt_manager = tf.train.CheckpointManager(ckpt, checkpoint_path, max_to_keep=5)
+        ckpt_manager = tf.train.CheckpointManager(ckpt, checkpoint_path, max_to_keep=5)
+        return ckpt_manager, dataset
 
 class BahdanauAttention(tf.keras.Model):
     def __init__(self, units):

@@ -19,11 +19,11 @@ from caption_genarator import Caption_Generator
 class ShowAttendandTell():
     def __init__(self):
         self.captiongenerator = Caption_Generator() 
+        self.tokenizer = captiongenerator.tokenizer
 
     def train(self):
-        self.caption_genarator.model()
+        self.dataset, ckpt_manager = self.caption_genarator.model()
         start_epoch = 0
-        ckpt_manager = self.caption_genarator.ckpt_manager
         if ckpt_manager.latest_checkpoint:
             start_epoch = int(ckpt_manager.latest_checkpoint.split('-')[-1])
 
@@ -49,9 +49,9 @@ class ShowAttendandTell():
     
     def test(self):
         # 検証用セットのキャプション
-        rid = np.random.randint(0, len(img_name_val))
-        image = img_name_val[rid]
-        real_caption = ' '.join([tokenizer.index_word[i] for i in cap_val[rid] if i not in [0]])
+        rid = np.random.randint(0, len(self.captiongenerator.img_name_val))
+        image = self.captiongenerator.img_name_val[rid]
+        real_caption = ' '.join([self.tokenizer.index_word[i] for i in self.captiongenerator.cap_val[rid] if i not in [0]])
         result = self.caption_genarator.evaluate(image)
 
         print ('Real Caption:', real_caption)
@@ -62,7 +62,7 @@ class ShowAttendandTell():
         image_path = tf.keras.utils.get_file('image'+image_extension,
                                             origin=image_url)
 
-        result = self.evaluate(image_path)
+        result = self.captiongenerator.evaluate(image_path)
         print ('Prediction Caption:', ' '.join(result))
         # 画像を開く
         Image.open(image_path)

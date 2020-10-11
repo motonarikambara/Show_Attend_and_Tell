@@ -22,7 +22,7 @@ class DataLoader():
                                                 cache_subdir=os.path.abspath('.'),
                                                 origin = 'http://images.cocodataset.org/annotations/annotations_trainval2014.zip',
                                                 extract = True)
-        self.annotation_file = os.path.dirname(annotation_zip)+'/annotations/captions_train2014.json'
+        annotation_file = os.path.dirname(annotation_zip)+'/annotations/captions_train2014.json'
 
         name_of_zip = 'train2014.zip'
         if not os.path.exists(os.path.abspath('.') + '/' + name_of_zip):
@@ -30,13 +30,12 @@ class DataLoader():
                                                 cache_subdir=os.path.abspath('.'),
                                                 origin = 'http://images.cocodataset.org/zips/train2014.zip',
                                                 extract = True)
-            self.PATH = os.path.dirname(image_zip)+'/train2014/'
+            PATH = os.path.dirname(image_zip)+'/train2014/'
         else:
-            self.PATH = os.path.abspath('.')+'/train2014/'
+            PATH = os.path.abspath('.')+'/train2014/'
 
-    def datapreprocess(self):
         # json ファイルの読み込み
-        with open(self.annotation_file, 'r') as f:
+        with open(annotation_file, 'r') as f:
             annotations = json.load(f)
 
         # ベクトルにキャプションと画像の名前を格納
@@ -46,7 +45,7 @@ class DataLoader():
         for annot in annotations['annotations']:
             caption = '<start> ' + annot['caption'] + ' <end>'
             image_id = annot['image_id']
-            full_coco_image_path = self.PATH + 'COCO_train2014_' + '%012d.jpg' % (image_id)
+            full_coco_image_path = PATH + 'COCO_train2014_' + '%012d.jpg' % (image_id)
 
             all_img_name_vector.append(full_coco_image_path)
             all_captions.append(caption)
@@ -83,7 +82,7 @@ class DataLoader():
 
         # batch_size はシステム構成に合わせて自由に変更可能
         image_dataset = tf.data.Dataset.from_tensor_slices(encode_train)
-        image_dataset = image_dataset.map(load_image, num_parallel_calls=tf.data.experimental.AUTOTUNE).batch(16)
+        image_dataset = image_dataset.map(self.load_image, num_parallel_calls=tf.data.experimental.AUTOTUNE).batch(16)
 
         for img, path in tqdm(image_dataset):
         batch_features = self.image_features_extract_model(img)
@@ -99,7 +98,6 @@ class DataLoader():
         return max(len(t) for t in tensor)
 
     def tokenize(self):
-        self.datapreprocess()
         self.tokenizer = tf.keras.preprocessing.text.Tokenizer(oov_token="<unk>",
                                                         filters='!"#$%&()*+.,-/:;=?@[\]^_`{|}~ ')
         self.tokenizer.fit_on_texts(self.train_captions)
@@ -117,3 +115,4 @@ class DataLoader():
 
         # アテンションの重みを格納するために使われる max_length を計算
         max_length = self.calc_max_length(train_seqs)
+        return cap_vector, max_length
