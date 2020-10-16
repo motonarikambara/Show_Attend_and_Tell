@@ -57,7 +57,7 @@ class Caption_Generator():
         self.optimizer.apply_gradients(zip(gradients, trainable_variables))
         return loss, total_loss
 
-    def evaluate(image):
+    def evaluate(self, image):
 
         hidden = self.decoder.reset_state(batch_size=1)
         temp_input = tf.expand_dims(self.dataloader.load_image(image)[0], 0)
@@ -72,27 +72,33 @@ class Caption_Generator():
         for i in range(self.max_length):
             predictions, hidden, attention_weights = self.decoder(dec_input, features, hidden)
             predicted_id = tf.random.categorical(predictions, 1)[0][0].numpy()
+            if predicted_id not in self.tokenizer.index_word:
+                return result
             result.append(self.tokenizer.index_word[predicted_id])
 
             if self.tokenizer.index_word[predicted_id] == '<end>':
                 return result
 
             dec_input = tf.expand_dims([predicted_id], 0)
+        # print(result)
         return result
 
     def model(self):
         # これらのパラメータはシステム構成に合わせて自由に変更してください
-        img_name_train, self.img_name_val, cap_train, self.cap_val = train_test_split(self.img_name_vector,
-                                                                                self.cap_vector,
-                                                                                test_size=0.2,
-                                                                                random_state=0)
-
+        # img_name_train, self.img_name_val, cap_train, self.cap_val = train_test_split(self.dataloader.img_name_vector,
+        #                                                                         self.cap_vector,
+        #                                                                         test_size=0.2,
+        #                                                                         random_state=0)
+        img_name_train = self.dataloader.train_img
+        self.img_name_val = self.dataloader.test_img
+        cap_train = self.cap_vector
+        self.cap_val = self.dataloader.test_cap
         BATCH_SIZE = 64
         BUFFER_SIZE = 1000
         embedding_dim = 256
         units = 512
         vocab_size = len(self.tokenizer.word_index) + 1
-        num_steps = len(img_name_train) // BATCH_SIZE
+        self.num_steps = len(img_name_train) // BATCH_SIZE
         # InceptionV3 から抽出したベクトルの shape は (64, 2048)
         # つぎの 2 つのパラメータはこのベクトルの shape を表す
         features_shape = 2048
