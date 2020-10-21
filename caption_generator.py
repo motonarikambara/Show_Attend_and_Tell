@@ -22,6 +22,9 @@ class Caption_Generator():
         self.dataloader.dataprepare()
         self.cap_vector, self.max_length = self.dataloader.tokenize()
         self.tokenizer = self.dataloader.tokenizer
+        self.cheat = self.dataloader.cheat
+        self.test_target = self.dataloader.test_target
+        self.val_target = self.dataloader.val_target
 
 
     def loss_function(self, real, pred):
@@ -89,10 +92,13 @@ class Caption_Generator():
         #                                                                         self.cap_vector,
         #                                                                         test_size=0.2,
         #                                                                         random_state=0)
-        img_name_train = self.dataloader.train_img
-        self.img_name_val = self.dataloader.test_img
+        img_name_train = self.dataloader.train_images
+        self.img_name_test = self.dataloader.test_images
         cap_train = self.cap_vector
-        self.cap_val = self.dataloader.test_cap
+        self.cap_test = self.dataloader.test_captions
+        self.img_name_val = self.dataloader.val_images
+        self.cap_val = self.dataloader.val_captions
+
         BATCH_SIZE = 64
         BUFFER_SIZE = 1000
         embedding_dim = 256

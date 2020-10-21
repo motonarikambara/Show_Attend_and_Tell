@@ -18,73 +18,131 @@ import caption_generator
 
 class DataLoader():
     def __init__(self):
-        annotation_zip = tf.keras.utils.get_file('captions.zip',
-                                                cache_subdir=os.path.abspath('.'),
-                                                origin = 'http://images.cocodataset.org/annotations/annotations_trainval2014.zip',
-                                                extract = True)
-        annotation_file = os.path.dirname(annotation_zip)+'/annotations/captions_train2014.json'
+        # annotation_zip = tf.keras.utils.get_file('captions.zip',
+        #                                         cache_subdir=os.path.abspath('.'),
+        #                                         origin = 'http://images.cocodataset.org/annotations/annotations_trainval2014.zip',
+        #                                         extract = True)
+        # annotation_file = os.path.dirname(annotation_zip)+'/annotations/captions_train2014.json'
 
-        name_of_zip = 'train2014.zip'
-        if not os.path.exists(os.path.abspath('.') + '/' + name_of_zip):
-            image_zip = tf.keras.utils.get_file(name_of_zip,
-                                                cache_subdir=os.path.abspath('.'),
-                                                origin = 'http://images.cocodataset.org/zips/train2014.zip',
-                                                extract = True)
-            PATH = os.path.dirname(image_zip)+'/train2014/'
-        else:
-            PATH = os.path.abspath('.')+'/train2014/'
-        # annotation_dir = 'aben20latest/labels'
-        # train_annot = os.path.dirname(annotation_dir)+'/sentences_train_wrs.csv'
-        # val_annot = os.path.dirname(annotation_dir)+'/sentences_val_wrs.csv'
-        # test_annot = os.path.dirname(annotation_dir)+'/sentences_test_wrs.csv'
+        # name_of_zip = 'train2014.zip'
+        # if not os.path.exists(os.path.abspath('.') + '/' + name_of_zip):
+        #     image_zip = tf.keras.utils.get_file(name_of_zip,
+        #                                         cache_subdir=os.path.abspath('.'),
+        #                                         origin = 'http://images.cocodataset.org/zips/train2014.zip',
+        #                                         extract = True)
+        #     PATH = os.path.dirname(image_zip)+'/train2014/'
+        # else:
+        #     PATH = os.path.abspath('.')+'/train2014/'
+        annotation_dir = os.path.abspath('.') + '/wsr20/labels/'
+        train_annot = os.path.dirname(annotation_dir) + '/sentences_train_wrs.csv'
+        train_imgs = os.path.dirname(annotation_dir) + '/image_id_train.csv'
+        val_annot = os.path.dirname(annotation_dir) + '/sentences_val_wrs.csv'
+        val_imgs = os.path.dirname(annotation_dir) + '/image_id_val.csv'
+        test_annot = os.path.dirname(annotation_dir) + '/sentences_test_wrs.csv'
+        test_imgs = os.path.dirname(annotation_dir) + '/image_id_test.csv'
+        test_target = os.path.dirname(annotation_dir) + '/target_id_test.csv'
+        val_target = os.path.dirname(annotation_dir) + '/target_id_val.csv'
 
-        # # json ファイルの読み込み
-        # with open(train_annot, 'r') as f:
-        #     trainannotations = csv.readers(f)
-        # with open(val_annot, 'r') as f:
-        #     valannotations = csv.readers(f)
-        # with open(test_annot, 'r') as f:
-        #     testannotations = csv.readers(f)
+
+        trainannotations = []
+        trainimgs = []
+        valannotations = []
+        valimgs = []
+        testannotations = []
+        testimgs = []
+        targetid = []
+        valtargetid= []
+        # csvファイルの読み込み
+        with open(train_annot, 'r') as f:
+            tmp = csv.reader(f)
+            for i in f:
+                trainannotations.append(i)
+        with open(train_imgs, 'r') as f:
+            tmp = csv.reader(f)
+            for i in f:
+                trainimgs.append(i)
+        with open(val_annot, 'r') as f:
+            tmp = csv.reader(f)
+            for i in f:
+                valannotations.append(i)
+        with open(val_imgs, 'r') as f:
+            tmp = csv.reader(f)
+            for i in f:
+                valimgs.append(i)
+        with open(test_annot, 'r') as f:
+            tmp = csv.reader(f)
+            for i in f:
+                testannotations.append(i)
+        with open(test_imgs, 'r') as f:
+            tmp = csv.reader(f)
+            for i in f:
+                testimgs.append(i)
+        with open(test_target, 'r') as f:
+            tmp = csv.reader(f)
+            for i in f:
+                targetid.append(i)
+        with open(val_target, 'r') as f:
+            tmp = csv.reader(f)
+            for i in f:
+                valtargetid.append(i)
+        #############################################################
+        tmptestannotations = []
+        tmptest_annot = os.path.abspath('.') + '/generated_sentence_test000.txt'
+        with open(tmptest_annot, 'r') as f:
+            for i in f:
+                tmptestannotations.append(i)
+        ###############################################################
+
+        PATH = os.path.abspath('.') + '/wsr20/single_view_img_data/'
         # json ファイルの読み込み
-        with open(annotation_file, 'r') as f:
-            annotations = json.load(f)
+        # with open(annotation_file, 'r') as f:
+        #     annotations = json.load(f)
 
+        # image id & caption
+        tr_caption = []
+        tr_imgs = []
+        va_caption = []
+        va_imgs = []
+        tes_caption = []
+        tes_imgs = []
+        tmptes_caption = []
 
+        for i in range(len(trainannotations)):
+            caption = '<start> ' + trainannotations[i] + ' <end>'
+            tr_caption.append(caption)
+            image_path = PATH + '%04d.jpg' % (int(trainimgs[i]))
+            tr_imgs.append(image_path)
 
-        # ベクトルにキャプションと画像の名前を格納
-        all_captions = []
-        all_img_name_vector = [] 
-        count = 0
-        for annot in annotations['annotations']:
-            caption = '<start> ' + annot['caption'] + ' <end>'
-            image_id = annot['image_id']
-            full_coco_image_path = PATH + 'COCO_train2014_' + '%012d.jpg' % (image_id)
-            if count <= 9999:
-                all_img_name_vector.append(full_coco_image_path)
-                all_captions.append(caption)
-                count += 1 
-            else:
-                break
+        for i in range(len(valannotations)):
+            caption = '<start> ' + valannotations[i] + ' <end>'
+            va_caption.append(caption)
+            image_path = PATH + '%04d.jpg' % (int(valimgs[i]))
+            va_imgs.append(image_path)
+        
+        for i in range(len(testannotations)):
+            # caption = '<start> ' + testannotations[i] + ' <end>'
+            caption = testannotations[i]
+            tes_caption.append(caption)
+            image_path = PATH + '%04d.jpg' % (int(testimgs[i]))
+            tes_imgs.append(image_path)
+        
+        for i in range(len(tmptestannotations)):
+            caption = tmptestannotations[i]
+            tmptes_caption.append(caption)
 
-        # captions と image_names を一緒にシャッフル
-        # random_state を設定
-        self.train_captions, self.img_name_vector = shuffle(all_captions,
-                                                all_img_name_vector,
+        self.cheat = tmptes_caption
+
+        self.train_captions, self.train_images = shuffle(tr_caption,
+                                                tr_imgs,
                                                 random_state=1)
-        self.train_cap = []
-        self.train_img = []
-        self.test_cap = []
-        self.test_img = []
-        for i in range(len(all_captions)):
-            if i < 8000:
-                self.train_cap.append(all_captions[i])
-                self.train_img.append(all_img_name_vector[i])
-            else : 
-                self.test_cap.append(all_captions[i])
-                self.test_img.append(all_img_name_vector[i])
-
-
-
+        self.val_captions, self.val_images = shuffle(va_caption,
+                                                va_imgs,
+                                                random_state=1)
+        self.test_captions = tes_caption
+        self.test_images = tes_imgs
+        self.test_target = targetid
+        self.val_target = valtargetid
+                                 
     def load_image(self, image_path):
         img = tf.io.read_file(image_path)
         img = tf.image.decode_jpeg(img, channels=3)
@@ -112,7 +170,7 @@ class DataLoader():
         self.image_features_extract_model = tf.keras.Model(new_input, hidden_layer)
 
         # 重複のない画像を取得
-        encode_train = sorted(set(self.train_img))
+        encode_train = sorted(set(self.train_images))
 
         # batch_size はシステム構成に合わせて自由に変更可能
         image_dataset = tf.data.Dataset.from_tensor_slices(encode_train)
@@ -134,14 +192,14 @@ class DataLoader():
     def tokenize(self):
         self.tokenizer = tf.keras.preprocessing.text.Tokenizer(oov_token="<unk>",
                                                         filters='!"#$%&()*+.,-/:;=?@[\]^_`{|}~ ')
-        self.tokenizer.fit_on_texts(self.train_cap)
-        train_seqs = self.tokenizer.texts_to_sequences(self.train_cap)
+        self.tokenizer.fit_on_texts(self.train_captions)
+        train_seqs = self.tokenizer.texts_to_sequences(self.train_captions)
 
         self.tokenizer.word_index['<pad>'] = 0
         self.tokenizer.index_word[0] = '<pad>'
 
         # トークン化したベクトルを生成
-        train_seqs = self.tokenizer.texts_to_sequences(self.train_cap)
+        train_seqs = self.tokenizer.texts_to_sequences(self.train_captions)
 
         # キャプションの最大長に各ベクトルをパディング
         # max_length を指定しない場合、pad_sequences は自動的に計算
