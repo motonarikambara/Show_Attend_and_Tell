@@ -96,8 +96,8 @@ class Caption_Generator():
         self.img_name_test = self.dataloader.test_images
         cap_train = self.cap_vector
         self.cap_test = self.dataloader.test_captions
-        self.img_name_val = self.dataloader.val_images
-        self.cap_val = self.dataloader.val_captions
+        # self.img_name_val = self.dataloader.val_images
+        # self.cap_val = self.dataloader.val_captions
 
         BATCH_SIZE = 64
         BUFFER_SIZE = 1000
@@ -178,6 +178,7 @@ class RNN_Decoder(tf.keras.Model):
 
         self.embedding = tf.keras.layers.Embedding(vocab_size, embedding_dim)
         self.gru = tf.keras.layers.GRU(self.units,
+                                    activation='sigmoid',
                                     return_sequences=True,
                                     return_state=True,
                                     recurrent_initializer='glorot_uniform')

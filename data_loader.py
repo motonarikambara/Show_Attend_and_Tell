@@ -33,15 +33,16 @@ class DataLoader():
         #     PATH = os.path.dirname(image_zip)+'/train2014/'
         # else:
         #     PATH = os.path.abspath('.')+'/train2014/'
-        annotation_dir = os.path.abspath('.') + '/wsr20/labels/'
-        train_annot = os.path.dirname(annotation_dir) + '/sentences_train_wrs.csv'
-        train_imgs = os.path.dirname(annotation_dir) + '/image_id_train.csv'
-        val_annot = os.path.dirname(annotation_dir) + '/sentences_val_wrs.csv'
-        val_imgs = os.path.dirname(annotation_dir) + '/image_id_val.csv'
-        test_annot = os.path.dirname(annotation_dir) + '/sentences_test_wrs.csv'
-        test_imgs = os.path.dirname(annotation_dir) + '/image_id_test.csv'
-        test_target = os.path.dirname(annotation_dir) + '/target_id_test.csv'
-        val_target = os.path.dirname(annotation_dir) + '/target_id_val.csv'
+        annotation_dir = os.path.abspath('.') + '/pfn-pic/'
+        tmp_dir = os.path.abspath('.') + '/wsr20/labels/'
+        train_annot = os.path.dirname(annotation_dir) + '/labels/train_cap.csv'
+        train_imgs = os.path.dirname(annotation_dir) + '/labels/train_img_id.csv'
+        # val_annot = os.path.dirname(annotation_dir) + '/sentences_val_wrs.csv'
+        # val_imgs = os.path.dirname(annotation_dir) + '/image_id_val.csv'
+        test_annot = os.path.dirname(annotation_dir) + '/labels/validation_cap.csv'
+        test_imgs = os.path.dirname(annotation_dir) + '/labels/validation_img_id.csv'
+        test_target = os.path.dirname(tmp_dir) + '/target_id_test.csv'
+        val_target = os.path.dirname(tmp_dir) + '/target_id_val.csv'
 
 
         trainannotations = []
@@ -61,14 +62,14 @@ class DataLoader():
             tmp = csv.reader(f)
             for i in f:
                 trainimgs.append(i)
-        with open(val_annot, 'r') as f:
-            tmp = csv.reader(f)
-            for i in f:
-                valannotations.append(i)
-        with open(val_imgs, 'r') as f:
-            tmp = csv.reader(f)
-            for i in f:
-                valimgs.append(i)
+        # with open(val_annot, 'r') as f:
+        #     tmp = csv.reader(f)
+        #     for i in f:
+        #         valannotations.append(i)
+        # with open(val_imgs, 'r') as f:
+        #     tmp = csv.reader(f)
+        #     for i in f:
+        #         valimgs.append(i)
         with open(test_annot, 'r') as f:
             tmp = csv.reader(f)
             for i in f:
@@ -87,13 +88,13 @@ class DataLoader():
                 valtargetid.append(i)
         #############################################################
         tmptestannotations = []
-        tmptest_annot = os.path.abspath('.') + '/generated_sentence_test000.txt'
+        tmptest_annot = os.path.abspath('.') + '/result/20201024_cap.txt'
         with open(tmptest_annot, 'r') as f:
             for i in f:
                 tmptestannotations.append(i)
         ###############################################################
 
-        PATH = os.path.abspath('.') + '/wsr20/single_view_img_data/'
+        PATH = os.path.abspath('.') + '/pfn-pic/image_file/'
         # json ファイルの読み込み
         # with open(annotation_file, 'r') as f:
         #     annotations = json.load(f)
@@ -110,20 +111,20 @@ class DataLoader():
         for i in range(len(trainannotations)):
             caption = '<start> ' + trainannotations[i] + ' <end>'
             tr_caption.append(caption)
-            image_path = PATH + '%04d.jpg' % (int(trainimgs[i]))
+            image_path = PATH + trainimgs[i].replace("\n", "")
             tr_imgs.append(image_path)
 
-        for i in range(len(valannotations)):
-            caption = '<start> ' + valannotations[i] + ' <end>'
-            va_caption.append(caption)
-            image_path = PATH + '%04d.jpg' % (int(valimgs[i]))
-            va_imgs.append(image_path)
+        # for i in range(len(valannotations)):
+        #     caption = '<start> ' + valannotations[i] + ' <end>'
+        #     va_caption.append(caption)
+        #     image_path = PATH + '%04d.jpg' % (int(valimgs[i]))
+        #     va_imgs.append(image_path)
         
         for i in range(len(testannotations)):
             # caption = '<start> ' + testannotations[i] + ' <end>'
             caption = testannotations[i]
             tes_caption.append(caption)
-            image_path = PATH + '%04d.jpg' % (int(testimgs[i]))
+            image_path = PATH + testimgs[i].replace("\n", "")
             tes_imgs.append(image_path)
         
         for i in range(len(tmptestannotations)):
@@ -135,9 +136,9 @@ class DataLoader():
         self.train_captions, self.train_images = shuffle(tr_caption,
                                                 tr_imgs,
                                                 random_state=1)
-        self.val_captions, self.val_images = shuffle(va_caption,
-                                                va_imgs,
-                                                random_state=1)
+        # self.val_captions, self.val_images = shuffle(va_caption,
+        #                                         va_imgs,
+        #                                         random_state=1)
         self.test_captions = tes_caption
         self.test_images = tes_imgs
         self.test_target = targetid
